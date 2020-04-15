@@ -41,9 +41,8 @@ namespace PDFConcat
             }
         }
 
-        public void PDF_Drop(object sender, DragEventArgs e)
+        public void _PDF_Drop(string[] files)
         {
-            string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
             Array.Sort(files);
             if (files == null)
             {
@@ -51,11 +50,13 @@ namespace PDFConcat
             }
             for (int i = 0; i < files.Length; i++)
             {
-                if (System.IO.File.Exists(files[i]) == false)
+                if (System.IO.Directory.Exists(files[i]))
                 {
+                    _PDF_Drop(Directory.GetFiles(files[i], "*", SearchOption.AllDirectories));
                     continue;
                 }
-                if (System.IO.Path.GetExtension(files[i]) != ".pdf"){
+                if (System.IO.Path.GetExtension(files[i]) != ".pdf")
+                {
                     continue;
                 }
                 PdfFile pdf = new PdfFile();
@@ -65,6 +66,12 @@ namespace PDFConcat
                 joinPDFs.Add(pdf);
             }
 
+        }
+
+        public void PDF_Drop(object sender, DragEventArgs e)
+        {
+            _PDF_Drop(e.Data.GetData(DataFormats.FileDrop) as string[]);
+            
         }
 
         private void Button_Increase_Item_Order(object sender, RoutedEventArgs e)
@@ -152,6 +159,7 @@ namespace PDFConcat
                 }
             }
             joinDocument.Close();
+            System.Diagnostics.Process.Start(sdialog.FileName);
             joinPDFs.Clear();
         }
 
