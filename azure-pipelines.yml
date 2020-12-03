@@ -34,5 +34,5 @@ steps:
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(Pipeline.Workspace)/s/$(Build.Repository.Name)/bin/Release'
-    artifact: 'ImageToWB'
+    artifact: 'pdf_concat'
     publishLocation: 'pipeline'
