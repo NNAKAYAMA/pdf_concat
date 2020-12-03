@@ -33,6 +33,6 @@ steps:
     configuration: '$(buildConfiguration)'
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Pipeline.Workspace)/s/$(Build.Repository.Name)/bin/Release'
-    artifact: 'pdf_concat'
+    targetPath: '$(Pipeline.Workspace)/s/PDFConcat/bin/Release'
+    artifact: 'PDFConcat'
     publishLocation: 'pipeline'
