@@ -21,7 +21,9 @@ namespace PDFConcat
             listView_pdf_files.ItemsSource =  joinPDFs;
         }
 
-        
+        private string SaveFileName;
+        private string SaveDirectoryPath;
+
         public class PdfFile
         {
             public string Path
@@ -70,6 +72,13 @@ namespace PDFConcat
 
         public void PDF_Drop(object sender, DragEventArgs e)
         {
+            string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (files.Length == 0) return;
+            if (files.Length == 1 && Directory.Exists(files[0]))
+            {
+                SaveFileName = new DirectoryInfo(files[0]).Name;
+            }
+            SaveDirectoryPath = Path.GetDirectoryName(files[0]);
             _PDF_Drop(e.Data.GetData(DataFormats.FileDrop) as string[]);
             
         }
@@ -117,9 +126,10 @@ namespace PDFConcat
                 return;
             }
             SaveFileDialog sdialog = new SaveFileDialog();
+            sdialog.InitialDirectory = SaveDirectoryPath;
             sdialog.Title = "保存する場所を指定してください";
             sdialog.DefaultExt = "pdf";
-            sdialog.FileName = DateTime.Now.ToString("yymmddHHMMss") + ".pdf";
+            sdialog.FileName = SaveFileName ?? DateTime.Now.ToString("yymmddHHMMss") + ".pdf";
             Nullable<bool> result = sdialog.ShowDialog();
             if(result == false)
             {
@@ -132,7 +142,9 @@ namespace PDFConcat
             PdfContentByte joinPcb = joinWriter.DirectContent;
             foreach(PdfFile pdf in joinPDFs)
             {
+                PdfReader.unethicalreading = true;
                 PdfReader pdfReader = new PdfReader(File.ReadAllBytes(pdf.Path));
+               
                 int joinNp = pdfReader.NumberOfPages;
                 for(int joinPageNum = 1;joinPageNum <= joinNp; joinPageNum++)
                 {
