@@ -6,6 +6,11 @@ using System.IO;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using Microsoft.Win32;
+using Org.BouncyCastle.Bcpg;
+using System.Collections.Generic;
+using System.Windows.Controls;
+using System.Windows.Media;
+
 namespace PDFConcat
 {
     /// <summary>
@@ -18,7 +23,7 @@ namespace PDFConcat
         {
             InitializeComponent();
             joinPDFs = new ObservableCollection<PdfFile>();
-            listView_pdf_files.ItemsSource =  joinPDFs;
+            listView_pdf_files.ItemsSource = joinPDFs;
         }
 
         private string SaveFileName;
@@ -80,7 +85,7 @@ namespace PDFConcat
             }
             SaveDirectoryPath = Path.GetDirectoryName(files[0]);
             _PDF_Drop(e.Data.GetData(DataFormats.FileDrop) as string[]);
-            
+
         }
 
         private void Button_Increase_Item_Order(object sender, RoutedEventArgs e)
@@ -100,7 +105,7 @@ namespace PDFConcat
         private void Button_Decrease_Item_Order(object sender, RoutedEventArgs e)
         {
             int selectedID = listView_pdf_files.SelectedIndex;
-            if(selectedID == 0 || selectedID == -1)
+            if (selectedID == 0 || selectedID == -1)
             {
                 return;
             }
@@ -121,57 +126,11 @@ namespace PDFConcat
 
         private void Button_Concat_PDF_Click(object sender, RoutedEventArgs e)
         {
-            if(joinPDFs.Count == 0)
+            if (joinPDFs.Count == 0)
             {
                 return;
             }
-            SaveFileDialog sdialog = new SaveFileDialog();
-            sdialog.InitialDirectory = SaveDirectoryPath;
-            sdialog.Title = "保存する場所を指定してください";
-            sdialog.DefaultExt = "pdf";
-            sdialog.FileName = SaveFileName ?? DateTime.Now.ToString("yymmddHHMMss") + ".pdf";
-            Nullable<bool> result = sdialog.ShowDialog();
-            if(result == false)
-            {
-                return;
-            }
-            FileStream joinStream = new  FileStream(sdialog.FileName, FileMode.OpenOrCreate);
-            Document joinDocument = new Document();
-            PdfWriter joinWriter = PdfWriter.GetInstance(joinDocument, joinStream);
-            joinDocument.Open();
-            PdfContentByte joinPcb = joinWriter.DirectContent;
-            foreach(PdfFile pdf in joinPDFs)
-            {
-                PdfReader.unethicalreading = true;
-                PdfReader pdfReader = new PdfReader(File.ReadAllBytes(pdf.Path));
-               
-                int joinNp = pdfReader.NumberOfPages;
-                for(int joinPageNum = 1;joinPageNum <= joinNp; joinPageNum++)
-                {
-                    int pageRotation = pdfReader.GetPageRotation(1);
-                    joinDocument.SetPageSize(pdfReader.GetPageSizeWithRotation(joinPageNum));
-                    joinDocument.NewPage();
-                    PdfImportedPage joinPage = joinWriter.GetImportedPage(pdfReader, joinPageNum);
-                    if(pageRotation == 90)
-                    {
-                        joinPcb.AddTemplate(joinPage, 0, -1, 1, 0, 0, pdfReader.GetPageSizeWithRotation(joinPageNum).Height);
-                    }
-                    else if (pageRotation == 180)
-                    {
-                        joinPcb.AddTemplate(joinPage, -1, 0,1, -1, pdfReader.GetPageSizeWithRotation(joinPageNum).Width, pdfReader.GetPageSizeWithRotation(joinPageNum).Height);
-                    }
-                    else if (pageRotation == 270)
-                    {
-                        joinPcb.AddTemplate(joinPage, 0, 1, -1, 0, pdfReader.GetPageSizeWithRotation(joinPageNum).Width,0);
-                    }
-                    else
-                    {
-                        joinPcb.AddTemplate(joinPage, 1, 0, 0,1, 0, 0);
-                    }
-                }
-            }
-            joinDocument.Close();
-            System.Diagnostics.Process.Start(sdialog.FileName);
+            Concat_PDF();
             joinPDFs.Clear();
         }
 
@@ -179,5 +138,107 @@ namespace PDFConcat
         {
             joinPDFs.Clear();
         }
+
+        private void Concat_PDF()
+        {
+            SaveFileDialog sdialog = new SaveFileDialog();
+            sdialog.InitialDirectory = SaveDirectoryPath;
+            sdialog.Title = "保存する場所を指定してください";
+            sdialog.DefaultExt = "pdf";
+            sdialog.FileName = SaveFileName ?? DateTime.Now.ToString("yymmddHHMMss") + ".pdf";
+            var result = sdialog.ShowDialog();
+            if (result == false)
+            {
+                return;
+            }
+            PdfReader.unethicalreading = true;
+            FileStream joinStream = new FileStream(sdialog.FileName, FileMode.OpenOrCreate);
+            Document joinDocument = new Document();
+            PdfWriter joinWriter = PdfWriter.GetInstance(joinDocument, joinStream);
+            joinDocument.Open();
+            PdfContentByte joinPcb = joinWriter.DirectContent;
+            var fontName = "meiryo";
+            if (!FontFactory.IsRegistered(fontName))
+            {
+                var fontPath = Environment.GetEnvironmentVariable("SystemRoot") + "\\fonts\\meiryo.ttc";
+                FontFactory.Register(fontPath, fontName);
+            }
+            Font pfont =
+                    FontFactory.GetFont(fontName,
+                    BaseFont.IDENTITY_H,    //横書き
+                    BaseFont.EMBEDDED,  //フォントをPDFファイルに組み込まない（重要）
+                    10f,                    //フォントサイズ
+                    Font.NORMAL,           //フォントスタイル
+                    BaseColor.BLACK);       //フォントカラー
+            Font h1font =
+              FontFactory.GetFont(fontName,
+              BaseFont.IDENTITY_H,    //横書き
+              BaseFont.EMBEDDED,  //フォントをPDFファイルに組み込まない（重要）
+              14f,                    //フォントサイズ
+              Font.NORMAL,           //フォントスタイル
+              BaseColor.BLACK);
+            int pageCount = 2;
+
+            joinDocument.NewPage();
+            string parentDirNameBuff = new DirectoryInfo(joinPDFs[0].Path).Parent.Name;
+            if (true)
+            {
+                joinDocument.Add(new Paragraph(parentDirNameBuff, h1font));
+            }
+
+
+            // 目次の作成
+            foreach (PdfFile pdf in joinPDFs)
+            {
+                PdfReader pdfReader = new PdfReader(File.ReadAllBytes(pdf.Path));
+                string parentDirName = new DirectoryInfo(pdf.Path).Parent.Name;
+
+                if(parentDirName != parentDirNameBuff)
+                {
+                    joinDocument.Add(new Paragraph(20f, parentDirName, h1font));
+                    parentDirNameBuff = parentDirName;
+                }
+                Chunk link = new Chunk(pdf.Title, pfont);
+                PdfAction action = PdfAction.GotoLocalPage(pageCount, new PdfDestination(PdfDestination.FIT), joinWriter);
+                link.SetAction(action);
+                joinDocument.Add(new Paragraph(link));
+                pageCount += pdfReader.NumberOfPages;
+            }
+
+            foreach (PdfFile pdf in joinPDFs)
+            {
+                
+                PdfReader pdfReader = new PdfReader(File.ReadAllBytes(pdf.Path));
+
+                int joinNp = pdfReader.NumberOfPages;
+                for (int joinPageNum = 1; joinPageNum <= joinNp; joinPageNum++)
+                {
+                    int pageRotation = pdfReader.GetPageRotation(1);
+                    joinDocument.SetPageSize(pdfReader.GetPageSizeWithRotation(joinPageNum));
+                    joinDocument.NewPage();
+                    PdfImportedPage joinPage = joinWriter.GetImportedPage(pdfReader, joinPageNum);
+                    if (pageRotation == 90)
+                    {
+                        joinPcb.AddTemplate(joinPage, 0, -1, 1, 0, 0, pdfReader.GetPageSizeWithRotation(joinPageNum).Height);
+                    }
+                    else if (pageRotation == 180)
+                    {
+                        joinPcb.AddTemplate(joinPage, -1, 0, 1, -1, pdfReader.GetPageSizeWithRotation(joinPageNum).Width, pdfReader.GetPageSizeWithRotation(joinPageNum).Height);
+                    }
+                    else if (pageRotation == 270)
+                    {
+                        joinPcb.AddTemplate(joinPage, 0, 1, -1, 0, pdfReader.GetPageSizeWithRotation(joinPageNum).Width, 0);
+                    }
+                    else
+                    {
+                        joinPcb.AddTemplate(joinPage, 1, 0, 0, 1, 0, 0);
+                    }
+                }
+            }
+            joinDocument.Close();
+            System.Diagnostics.Process.Start(sdialog.FileName);
+        }
+
+        
     }
 }

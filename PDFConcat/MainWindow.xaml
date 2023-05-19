@@ -15,11 +15,14 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Button x:Name="button_decrease_item_order" Content="▼" HorizontalAlignment="Left" Height="40" Margin="324,56,0,0" VerticalAlignment="Top" Width="40" FontSize="20" Click="Button_Increase_Item_Order" Background="#FF3F3F46" Foreground="White"/>
-        <Button x:Name="button_increase_item_order" Content="▲" HorizontalAlignment="Left" Height="40" Margin="324,10,0,0" VerticalAlignment="Top" Width="40" RenderTransformOrigin="0.542,2.176" FontSize="20" Click="Button_Decrease_Item_Order" Background="#FF424248" Foreground="White"/>
-        <Button x:Name="button_remove_item" Content="✖" Height="40" Margin="324,102,0,0" VerticalAlignment="Top" FontSize="20" BorderBrush="#FF9E4545" Background="#FFFF2D2D" Foreground="White" Click="Button_Remove_Item" Width="40" HorizontalAlignment="Left"/>
-        <Button x:Name="button_concat_PDF" Content="結合" HorizontalAlignment="Left" Height="47" Margin="324,166,0,0" VerticalAlignment="Top" Width="154" FontSize="20" Click="Button_Concat_PDF_Click" Background="#FF44444A" Foreground="White"/>
-        <Button x:Name="button_clear_list" Content="クリア" Height="47" Margin="324,218,0,0" VerticalAlignment="Top" FontSize="20" Click="button_clear_list_Click" Background="#FFFF2D2D" Foreground="White" BorderBrush="#FFD33434" Width="154" HorizontalAlignment="Left"/>
+        <Button Content="▼" HorizontalAlignment="Left" Height="40" Margin="324,56,0,0" VerticalAlignment="Top" Width="40" FontSize="20" Click="Button_Increase_Item_Order" Background="#FF3F3F46" Foreground="White"/>
+        <Button Content="▲" HorizontalAlignment="Left" Height="40" Margin="324,10,0,0" VerticalAlignment="Top" Width="40" RenderTransformOrigin="0.542,2.176" FontSize="20" Click="Button_Decrease_Item_Order" Background="#FF424248" Foreground="White"/>
+        <Button Content="✖" Height="40" Margin="324,102,0,0" VerticalAlignment="Top" FontSize="20" BorderBrush="#FF9E4545" Background="#FFFF2D2D" Foreground="White" Click="Button_Remove_Item" Width="40" HorizontalAlignment="Left"/>
+        <Button Content="結合" HorizontalAlignment="Left" Height="47" Margin="324,210,0,0" VerticalAlignment="Top" Width="154" FontSize="20" Click="Button_Concat_PDF_Click" Background="#FF44444A" Foreground="White"/>
+        <Button Content="クリア" Height="47" Margin="324,262,0,0" VerticalAlignment="Top" FontSize="20" Click="button_clear_list_Click" Background="#FFFF2D2D" Foreground="White" BorderBrush="#FFD33434" Width="154" HorizontalAlignment="Left"/>
+        <TextBlock Text="ファイル名" Margin="320,170,100,130"/>
+        <TextBox x:Name="FILENAME_TXTBOX" Width="100" Margin="324,185,101,129" Height="20" />
+        <TextBlock Text=".pdf" Margin="430,190,60,130" />
 
     </Grid>
 </Window>
