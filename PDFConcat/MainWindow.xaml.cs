@@ -7,7 +7,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
-
 namespace PDFConcat
 {
     /// <summary>
@@ -42,7 +41,7 @@ namespace PDFConcat
                 set;
             }
 
-            public int id
+            public int ID
             {
                 get;
                 set;
@@ -52,7 +51,7 @@ namespace PDFConcat
             {
                 Path = path;
                 Title = title;
-                this.id = id;
+                this.ID = id;
             }
         }
 
@@ -105,9 +104,9 @@ namespace PDFConcat
             {
                 return;
             }
-            PdfFiles[selectedID].id += 1;
-            PdfFiles[selectedID + 1].id -= 1;
-            PdfFiles = new ObservableCollection<PdfFile>(PdfFiles.OrderBy(n => n.id));
+            PdfFiles[selectedID].ID += 1;
+            PdfFiles[selectedID + 1].ID -= 1;
+            PdfFiles = new ObservableCollection<PdfFile>(PdfFiles.OrderBy(n => n.ID));
             listView_pdf_files.ItemsSource = PdfFiles;
         }
 
@@ -118,9 +117,9 @@ namespace PDFConcat
             {
                 return;
             }
-            PdfFiles[selectedID].id -= 1;
-            PdfFiles[selectedID - 1].id += 1;
-            PdfFiles = new ObservableCollection<PdfFile>(PdfFiles.OrderBy(n => n.id));
+            PdfFiles[selectedID].ID -= 1;
+            PdfFiles[selectedID - 1].ID += 1;
+            PdfFiles = new ObservableCollection<PdfFile>(PdfFiles.OrderBy(n => n.ID));
             listView_pdf_files.ItemsSource = PdfFiles;
         }
 
@@ -188,6 +187,8 @@ namespace PDFConcat
             // 目次の作成
             foreach (PdfFile pdf in PdfFiles)
             {
+                //PdfReader.unethicalreading = true;
+                PdfReader.unethicalreading = true;
                 PdfReader pdfReader = new PdfReader(File.ReadAllBytes(pdf.Path));
                 string directoryNameHeader = new DirectoryInfo(pdf.Path).Parent.Name;
 
@@ -230,35 +231,52 @@ namespace PDFConcat
             var saveFileName = Get_Save_PDF_Path();
             if (string.IsNullOrEmpty(saveFileName)) return;
   
-            PdfReader.unethicalreading = true;
             FileStream stream = new FileStream(saveFileName, FileMode.OpenOrCreate);
             Document documents = new Document();
             PdfWriter writer = PdfWriter.GetInstance(documents, stream);
             documents.Open();
             PdfContentByte joinPcb = writer.DirectContent;
+            PdfImportedPage page;
+            int rotation;
 
             if (CREATE_TOC_CHECKBOX.IsChecked ?? false)
             {
                 Create_TOC(ref documents, ref writer);
             }
-
             foreach (PdfFile pdf in PdfFiles)
             {
+                PdfReader.unethicalreading = true;
                 PdfReader pdfReader = new PdfReader(File.ReadAllBytes(pdf.Path));
-
                 for (int i = 1; i <= pdfReader.NumberOfPages; i++)
                 {
-                    int pageRotation = pdfReader.GetPageRotation(1);
                     documents.SetPageSize(pdfReader.GetPageSizeWithRotation(i));
                     documents.NewPage();
-                    PdfImportedPage joinPage = writer.GetImportedPage(pdfReader, i);
-                    if (pageRotation == 90) joinPcb.AddTemplate(joinPage, 0, -1, 1, 0, 0, pdfReader.GetPageSizeWithRotation(i).Height);
-                    else if (pageRotation == 180) joinPcb.AddTemplate(joinPage, -1, 0, 1, -1, pdfReader.GetPageSizeWithRotation(i).Width, pdfReader.GetPageSizeWithRotation(i).Height);
-                    else if (pageRotation == 270) joinPcb.AddTemplate(joinPage, 0, 1, -1, 0, pdfReader.GetPageSizeWithRotation(i).Width, 0);
-                    else joinPcb.AddTemplate(joinPage, 1, 0, 0, 1, 0, 0);
+                    page = writer.GetImportedPage(pdfReader, i);
+                    rotation = pdfReader.GetPageRotation(i);
+                    //if (rotation == 90 || rotation == 270)
+                    //    joinPcb.AddTemplate(page, 0, -1f, 1f, 0, 0, pdfReader.GetPageSizeWithRotation(i).Height);
+                    //else
+                    //    joinPcb.AddTemplate(page, 1f, 0, 0, 1f, 0, 0);
+                    if (rotation == 90)
+                    {
+                        joinPcb.AddTemplate(page, 0, -1, 1, 0, 0, pdfReader.GetPageSizeWithRotation(i).Height);
+                    }
+                    else if (rotation == 180)
+                    {
+                        joinPcb.AddTemplate(page, -1, 0, 1, -1, pdfReader.GetPageSizeWithRotation(i).Width, pdfReader.GetPageSizeWithRotation(joinPageNum).Height);
+                    }
+                    else if (rotation == 270)
+                    {
+                        joinPcb.AddTemplate(page, 0, 1, -1, 0, pdfReader.GetPageSizeWithRotation(i).Width, 0);
+                    }
+                    else
+                    {
+                        joinPcb.AddTemplate(page, 1, 0, 0, 1, 0, 0);
+                    }
                 }
             }
             documents.Close();
+            stream.Close();
             System.Diagnostics.Process.Start(saveFileName);
         }
     }
